@@ -1,9 +1,9 @@
 import api from "../config/api";
 import axios from "axios";
 
-const addNewPhoto = async ({ fileName, fileType, description }) => {
+const addNewFile = async ({ fileName, fileType, description, type }) => {
   console.log("fileName=>", fileName);
-  const response = await api.post("/photos", {
+  const response = await api.post(`/${type}`, {
     fileName,
     fileType,
     description,
@@ -18,24 +18,24 @@ const getAllPhotos = async () => {
   return response.data;
 };
 
-const deletePhoto = async (id) => {
+const deleteFile = async (id, type) => {
   console.log("inside deletePhoto=>");
-  const response = await api.delete(`/photos/${id}`, { params: { id } });
+  const response = await api.delete(`/${type}/${id}`, { params: { id } });
   console.log("response inside deletePhoto in photo services=> ", response);
   return response;
 };
 // ! this function will delete photo from db incase s3 bucket returns an error while saving the photo
-const deletePhotoFromDb = (id) => {
+const deleteFileFromDb = (id, type) => {
   console.log("inside deletePhotoFromDb=>");
 
-  deletePhoto(id)
+  deleteFile(id, type)
     .then((response) => {
       console.log("response=>", response);
     })
     .catch((error) => console.log(error));
 };
 
-const uploadPhotoToS3 = async (signedRequest, file, options, id) => {
+const uploadFileToS3 = async (signedRequest, file, options, id, type) => {
   // !axios  call to S3
   console.log("id inside photoServices=>", id);
   let res = false;
@@ -48,9 +48,9 @@ const uploadPhotoToS3 = async (signedRequest, file, options, id) => {
     })
     // !delete photo from db incase S3 bucket throws an error while saving the photo
     .catch((error) => {
-      deletePhotoFromDb(id);
+      deleteFileFromDb(id, type);
       alert("ERROR " + JSON.stringify(error));
     });
   return res;
 };
-export { addNewPhoto, getAllPhotos, deletePhoto, uploadPhotoToS3 };
+export { addNewFile, getAllPhotos, deleteFile, uploadFileToS3 };

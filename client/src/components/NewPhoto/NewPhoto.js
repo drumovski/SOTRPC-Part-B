@@ -1,118 +1,64 @@
-import React, { useState } from "react";
-import { uploadPhotoToS3 } from "../../services/photoServices";
+import React from "react";
+// import { uploadPhotoToS3 } from "../../services/photoServices";
 import Header from "../Header/Header";
-import { addNewPhoto } from "../../services/photoServices";
-import { Form, Container, Row, Col, Button, Alert } from "react-bootstrap";
+// import { addNewPhoto } from "../../services/photoServices";
+import { Form, Container, Button, Alert } from "react-bootstrap";
+import { validatePhoto, uploadFile } from "../../helpers";
+import { useGlobalState } from "../../config/globalState";
 
 // ! reference taken from https://medium.com/@khelif96/uploading-files-from-a-react-app-to-aws-s3-the-right-way-541dd6be689
 const NewPhoto = ({ history }) => {
-  const initialPhotoState = {
-    success: false,
-    url: "",
-    description: "",
-    photo: {},
-    selectedFile: "",
-  };
-  const [PhotoState, setPhotoState] = useState(initialPhotoState);
-  const [errorMessage, setErrorMessage] = useState(null);
-
-  const validatePhoto = (fileType, size) => {
-    const typeLowerCase = fileType.toLowerCase();
-    const TWOMEGABYTES = 2097152;
-    console.log("selectedFile.size=>", size);
-    console.log("fileType=>", fileType);
-    if (size >= TWOMEGABYTES) {
-      setErrorMessage("File Size needs to be below 2MB");
-      return false;
-    } else if (
-      typeLowerCase !== "jpg" &&
-      typeLowerCase !== "jpeg" &&
-      typeLowerCase !== "png"
-    ) {
-      setErrorMessage("File type needs to be a jpg or png");
-      return false;
-    } else {
-      setErrorMessage(null);
-      return true;
-    }
-  };
-
-  const uploadFile = (fileName, fileType) => {
-    const { description, selectedFile } = PhotoState;
-    console.log("Preparing the upload");
-    addNewPhoto({ fileName, fileType, description })
-      .then((response) => {
-        const { returnData } = response.data.data;
-        const { signedRequest } = returnData;
-        const responsePhoto = response.data.photo;
-        console.log("photo=>", responsePhoto);
-
-        setPhotoState({
-          ...PhotoState,
-          photo: responsePhoto,
-          url: returnData.url,
-        });
-        const id = responsePhoto._id;
-        console.log("photoState now=>", PhotoState);
-        console.log("Recieved a signed request=> " + signedRequest);
-        // Put the fileType in the headers for the upload
-        var options = {
-          headers: {
-            "Content-Type": fileType,
-          },
-        };
-        // !upload the photo to s3 bucket and incase of error delete the photo from db
-        uploadPhotoToS3(signedRequest, selectedFile, options, id)
-          .then((result) => {
-            console.log(result);
-            setPhotoState({
-              ...PhotoState,
-              success: true,
-            });
-          })
-          .catch((error) => {
-            console.log(error);
-            setErrorMessage("There was a problem saving the photo to S3");
-          });
-      })
-      .catch((error) => {
-        console.log(error);
-        setErrorMessage("There was a problem saving the photo to the server");
-      });
-  };
+  const { store, dispatch } = useGlobalState();
+  // !extracting fileState and errorMessage
+  const { fileState, errorMessage } = store;
+  console.log("fileState=>", fileState);
+  const { selectedFile, success } = fileState;
+  console.log("success=>", success);
+  console.log("errorMessage=>", errorMessage);
 
   const handleDescriptionChange = (event) => {
     const { name, value } = event.target;
-    setPhotoState({
-      ...PhotoState,
+    const updatedData = {
+      ...fileState,
       [name]: value,
+      type: "photos",
       success: false,
-      url: "",
+    };
+    // !whenever user enters a description of another photo set success message and error message should disappear
+    dispatch({
+      type: "setFileState",
+      data: updatedData,
     });
-    // console.log("inside handleDescriptionChange, photoState=>", PhotoState);
+    dispatch({
+      type: "setErrorMessage",
+      data: null,
+    });
   };
 
   const handleFileChange = (event) => {
-    setPhotoState({
-      ...PhotoState,
+    const updatedData = {
+      ...fileState,
       selectedFile: event.target.files[0],
-      success: false,
+    };
+    dispatch({
+      type: "setFileState",
+      data: updatedData,
     });
-    setErrorMessage(null);
-    // console.log("inside handleFileChange, photoState=>", PhotoState);
+
+    dispatch({
+      type: "setErrorMessage",
+      data: null,
+    });
+    console.log("inside handleFileChange");
   };
 
   const handleUpload = (event) => {
     event.preventDefault();
-    const { selectedFile } = PhotoState;
+
     console.log("selectedFile=>", selectedFile);
-    
-    // //! Split the filename to get the name and type
-    let fileParts = selectedFile.name.split(".");
-    let fileName = fileParts[0];
-    let fileType = fileParts[1];
-    if (validatePhoto(fileType, selectedFile.size))
-      uploadFile(fileName, fileType);
+
+    //  ! passed dispatch as argument to change the global state
+    if (validatePhoto(selectedFile, dispatch)) uploadFile(fileState, dispatch);
   };
 
   return (
@@ -123,7 +69,7 @@ const NewPhoto = ({ history }) => {
           <p>{errorMessage}</p>
         </Alert>
       )}
-      {PhotoState.success && (
+      {success && (
         <Alert variant="success">
           <p>Upload Successful!</p>
         </Alert>

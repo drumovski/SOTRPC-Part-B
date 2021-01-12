@@ -11,8 +11,8 @@ import Header from "../Header/Header";
 
 const Gallery = ({ history }) => {
   const { store, dispatch } = useGlobalState();
-  const { photos, LoggedInUser } = store;
-  const { role } = LoggedInUser;
+  const { photos } = store;
+
   console.log("photos=>", photos);
 
   const fetchPhotos = () => {
@@ -45,7 +45,11 @@ const Gallery = ({ history }) => {
                 // !sending photo as photo  to the pathname
               }}
             >
-              <Image className="thumb" src={photo.url} alt={photo.description} />
+              <Image
+                className="thumb"
+                src={photo.url}
+                alt={photo.description}
+              />
             </Link>
             <p className="photo-description">{photo.description}</p>
           </Container>

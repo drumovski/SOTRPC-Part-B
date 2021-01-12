@@ -4,7 +4,7 @@ import { registerUser } from "../../services/authServices";
 
 import Header from "../Header/Header";
 
-import { Form, Container, Col, Row, Button, Alert } from "react-bootstrap";
+import { Form, Container, Button, Alert } from "react-bootstrap";
 
 const Register = ({ history }) => {
   const initialFormState = {

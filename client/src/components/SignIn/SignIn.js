@@ -3,7 +3,7 @@ import { useGlobalState } from "../../config/globalState";
 import { loginUser } from "../../services/authServices";
 
 import Header from "../Header/Header";
-import { Form, Container, Col, Row, Button, Alert } from "react-bootstrap";
+import { Form, Container, Button, Alert } from "react-bootstrap";
 
 const SignIn = ({ history }) => {
   // !extracting dispatch from global state(store)
