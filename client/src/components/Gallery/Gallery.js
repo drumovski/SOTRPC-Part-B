@@ -1,11 +1,8 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useGlobalState } from "../../config/globalState";
-
 import { getAllPhotos } from "../../services/photoServices";
-
 import Container from "react-bootstrap/Container";
-
 import Image from "react-bootstrap/Image";
 import Header from "../Header/Header";
 

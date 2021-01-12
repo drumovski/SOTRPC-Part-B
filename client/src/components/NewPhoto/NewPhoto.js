@@ -3,7 +3,8 @@ import React from "react";
 import Header from "../Header/Header";
 // import { addNewPhoto } from "../../services/photoServices";
 import { Form, Container, Button, Alert } from "react-bootstrap";
-import { validatePhoto, uploadFile } from "../../helpers";
+import { uploadFile } from "../../services/fileServices";
+import { validatePhoto } from "../../validations/photoValidations";
 import { useGlobalState } from "../../config/globalState";
 
 // ! reference taken from https://medium.com/@khelif96/uploading-files-from-a-react-app-to-aws-s3-the-right-way-541dd6be689
@@ -54,9 +55,7 @@ const NewPhoto = ({ history }) => {
 
   const handleUpload = (event) => {
     event.preventDefault();
-
     console.log("selectedFile=>", selectedFile);
-
     //  ! passed dispatch as argument to change the global state
     if (validatePhoto(selectedFile, dispatch)) uploadFile(fileState, dispatch);
   };
@@ -85,7 +84,6 @@ const NewPhoto = ({ history }) => {
             onChange={handleDescriptionChange}
           />
         </Form.Group>
-
         <Form.Group controlId="formBasicFile">
           <Form.Control required type="file" onChange={handleFileChange} />
         </Form.Group>

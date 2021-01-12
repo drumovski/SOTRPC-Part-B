@@ -1,8 +1,6 @@
 import React from "react";
-
-import { deleteFile } from "../../services/photoServices";
+import { deleteFile } from "../../services/fileServices";
 import { useGlobalState } from "../../config/globalState";
-
 import ControlledCarousel from "../ControlledCarousel/ControlledCarousel";
 import { Container } from "react-bootstrap";
 import Header from "../Header/Header";

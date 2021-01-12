@@ -1,52 +1,60 @@
-import { addNewFile, uploadFileToS3 } from "../src/services/photoServices";
+import api from "../config/api";
+import axios from "axios";
 
-const validatePhoto = (selectedFile, dispatch) => {
-  const { size } = selectedFile;
-  console.log("size=>", size);
-  // //! Split the filename to get the type
-  let fileParts = selectedFile.name.split(".");
+const addNewFile = async ({ fileName, fileType, description, type }) => {
+  console.log("fileName=>", fileName);
+  const response = await api.post(`/${type}`, {
+    fileName,
+    fileType,
+    description,
+  });
+  console.log("response inside addNewFile=>", response);
+  return response;
+};
 
-  let fileType = fileParts[1];
-  const typeLowerCase = fileType.toLowerCase();
-  const TWOMEGABYTES = 2097152;
+const deleteFile = async (id, type) => {
+  console.log("inside deletefile=>");
+  const response = await api.delete(`/${type}/${id}`, { params: { id } });
+  console.log("response inside deletefile in file services=> ", response);
+  return response;
+};
 
-  console.log("fileType=>", fileType);
-  if (size >= TWOMEGABYTES) {
-    dispatch({
-      type: "setErrorMessage",
-      data: "File Size needs to be below 2MB",
+// ! this function will delete file from db in case s3 bucket returns an error while saving the file
+const deleteFileFromDb = (id, type) => {
+  console.log("inside deleteFileFromDb=>");
+  deleteFile(id, type)
+    .then((response) => {
+      console.log("response=>", response);
+    })
+    .catch((error) => console.log(error));
+};
+
+const uploadFileToS3 = async (signedRequest, file, options, id, type) => {
+  // !axios  call to S3
+  console.log("id inside fileServices=>", id);
+  let res = false;
+  await axios
+    .put(signedRequest, file, options)
+    .then((result) => {
+      console.log("Response from s3=>", result);
+      res = true;
+    })
+    // !delete photo from db incase S3 bucket throws an error while saving the photo
+    .catch((error) => {
+      deleteFileFromDb(id, type);
+      alert("ERROR " + JSON.stringify(error));
     });
-    return false;
-  } else if (
-    typeLowerCase !== "jpg" &&
-    typeLowerCase !== "jpeg" &&
-    typeLowerCase !== "png"
-  ) {
-    dispatch({
-      type: "setErrorMessage",
-      data: "File type needs to be a jpg or png",
-    });
-    return false;
-  } else {
-    dispatch({
-      type: "setErrorMessage",
-      data: null,
-    });
-    console.log("inside validatePhoto=>");
-    return true;
-  }
+  return res;
 };
 
 const uploadFile = (fileState, dispatch) => {
   const { selectedFile, description, type } = fileState;
-
   console.log("selectedFile=>", selectedFile);
   console.log("type inside uploadFile=>", type);
   let fileParts = selectedFile.name.split(".");
   let fileName = fileParts[0];
   let fileType = fileParts[1];
   console.log("fileType=>", fileType);
-
   console.log("Preparing the upload");
   // !passed type to make this function reusable to call backend api's
   addNewFile({ fileName, fileType, description, type })
@@ -65,17 +73,13 @@ const uploadFile = (fileState, dispatch) => {
         type: "setFileState",
         data: updatedData,
       });
-
       const id = responsePhoto._id;
-
       console.log("Recieved a signed request=> " + signedRequest);
-
       var options = {
         headers: {
           "Content-Type": fileType,
         },
       };
-
       uploadFileToS3(signedRequest, selectedFile, options, id, type)
         .then((result) => {
           console.log(result);
@@ -90,7 +94,6 @@ const uploadFile = (fileState, dispatch) => {
         })
         .catch((error) => {
           console.log(error);
-
           dispatch({
             type: "setErrorMessage",
             data: "There was a problem saving the photo to S3",
@@ -106,4 +109,4 @@ const uploadFile = (fileState, dispatch) => {
     });
 };
 
-export { validatePhoto, uploadFile };
+export { addNewFile, deleteFile, uploadFileToS3, uploadFile };
